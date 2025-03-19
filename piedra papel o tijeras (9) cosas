@@ -1,0 +1,78 @@
+import random
+import tkinter as tk
+from tkinter import messagebox
+
+# Diccionario de movimientos y sus emojis
+movimientos = {
+    "piedra": "✊",
+    "papel": "✋",
+    "tijeras": "✌️",
+    "lagarto": "🦎",
+    "spock": "🖖",
+    "pistola": "🔫",
+    "rayo": "⚡"
+}
+
+# Reglas del juego
+reglas = {
+    "piedra": ["tijeras", "lagarto", "pistola"],
+    "papel": ["piedra", "spock", "rayo"],
+    "tijeras": ["papel", "lagarto", "rayo"],
+    "lagarto": ["papel", "spock", "pistola"],
+    "spock": ["tijeras", "piedra", "rayo"],
+    "pistola": ["tijeras", "papel", "spock"],
+    "rayo": ["piedra", "lagarto", "pistola"]
+}
+
+# Función para determinar el ganador
+def determinar_ganador(jugador1, jugador2):
+    if jugador1 == jugador2:
+        return "Empate"
+    elif jugador2 in reglas[jugador1]:
+        return "Jugador 1"
+    else:
+        return "Jugador 2"
+
+# Función principal del juego contra la IA
+def jugar(eleccion_jugador):
+    eleccion_ia = random.choice(list(movimientos.keys()))
+
+    resultado_label.config(text=f"Tú elegiste: {movimientos[eleccion_jugador]} {eleccion_jugador.capitalize()}\nLa IA eligió: {movimientos[eleccion_ia]} {eleccion_ia.capitalize()}")
+    
+    ganador = determinar_ganador(eleccion_jugador, eleccion_ia)
+
+    if ganador == "Jugador 1":
+        messagebox.showinfo("Resultado", "🎉 ¡Ganaste!")
+    elif ganador == "Jugador 2":
+        messagebox.showinfo("Resultado", "🤖 ¡La IA ganó!")
+    else:
+        messagebox.showinfo("Resultado", "🤝 ¡Empate!")
+
+# Crear la ventana principal
+ventana = tk.Tk()
+ventana.title("Piedra, Papel, Tijeras, Lagarto, Spock, Pistola, Rayo")
+ventana.geometry("500x600")
+ventana.configure(bg="#222222")
+
+# Título
+titulo = tk.Label(ventana, text="¡Elige tu movimiento!", font=("Helvetica", 24), bg="#222222", fg="white")
+titulo.pack(pady=20)
+
+# Botones de movimiento
+for movimiento, emoji in movimientos.items():
+    boton = tk.Button(
+        ventana, text=f"{emoji} {movimiento.capitalize()}", font=("Helvetica", 18),
+        command=lambda m=movimiento: jugar(m), bg="#444444", fg="white", width=20, height=2
+    )
+    boton.pack(pady=5)
+
+# Resultado
+resultado_label = tk.Label(ventana, text="", font=("Helvetica", 18), bg="#222222", fg="white")
+resultado_label.pack(pady=20)
+
+# Botón de salida
+salir_btn = tk.Button(ventana, text="Salir", font=("Helvetica", 18), bg="red", fg="white", command=ventana.quit)
+salir_btn.pack(pady=20)
+
+# Ejecutar la ventana
+ventana.mainloop()
