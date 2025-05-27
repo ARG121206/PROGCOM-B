@@ -1,0 +1,128 @@
+import math
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+import io
+import pandas as pd
+import matplotlib.pyplot as plt
+from google.colab import files
+
+
+def convertir_fuerza(valor, unidad):
+    conversiones = {
+        'N (newton)': 1,
+        'kN (kilonewton)': 1000,
+        'lbf (libra-fuerza)': 4.44822
+    }
+    return valor * conversiones[unidad]
+
+def convertir_distancia(valor, unidad):
+    conversiones = {
+        'm (metro)': 1,
+        'cm (centímetro)': 0.01,
+        'mm (milímetro)': 0.001,
+        'in (pulgadas)': 0.0254,
+        'ft (pies)': 0.3048
+    }
+    return valor * conversiones[unidad]
+
+def convertir_angulo(valor, unidad):
+    if unidad == 'radianes':
+        return valor
+    else:
+        return math.radians(valor)
+
+
+fuerza = widgets.BoundedFloatText(description='Fuerza:', min=0)
+unidad_fuerza = widgets.Dropdown(
+    options=['N (newton)', 'kN (kilonewton)', 'lbf (libra-fuerza)'],
+    description='Unidad F:'
+)
+
+distancia = widgets.BoundedFloatText(description='Distancia:', min=0)
+unidad_distancia = widgets.Dropdown(
+    options=['m (metro)', 'cm (centímetro)', 'mm (milímetro)', 'in (pulgadas)', 'ft (pies)'],
+    description='Unidad D:'
+)
+
+angulo = widgets.FloatText(description='Ángulo:')
+unidad_angulo = widgets.Dropdown(
+    options=['grados', 'radianes'],
+    description='Unidad θ:'
+)
+
+boton = widgets.Button(description='Calcular Torque')
+boton_descarga = widgets.Button(description='Descargar Resultado')
+salida = widgets.Output()
+
+resultado_guardado = {}
+
+
+def calcular_torque(b):
+    with salida:
+        clear_output()
+        try:
+            f_valor = fuerza.value
+            d_valor = distancia.value
+            a_valor = angulo.value
+
+            if f_valor < 0 or d_valor < 0:
+                raise ValueError("La fuerza y la distancia no pueden ser negativas.")
+
+            f_si = convertir_fuerza(f_valor, unidad_fuerza.value)
+            d_si = convertir_distancia(d_valor, unidad_distancia.value)
+            theta = convertir_angulo(a_valor, unidad_angulo.value)
+
+            torque = f_si * d_si * math.sin(theta)
+            print(f"Torque = {torque:.2f} N·m")
+
+            
+            resultado_guardado.clear()
+            resultado_guardado.update({
+                'Fuerza': f_valor,
+                'Unidad Fuerza': unidad_fuerza.value,
+                'Distancia': d_valor,
+                'Unidad Distancia': unidad_distancia.value,
+                'Ángulo': a_valor,
+                'Unidad Ángulo': unidad_angulo.value,
+                'Torque (N·m)': round(torque, 2)
+            })
+
+            
+            angulos_deg = list(range(0, 181))
+            torques = [f_si * d_si * math.sin(math.radians(ang)) for ang in angulos_deg]
+
+            plt.figure(figsize=(8, 5))
+            plt.plot(angulos_deg, torques, label='Torque (N·m)', color='blue')
+            plt.axvline(a_valor if unidad_angulo.value == 'grados' else math.degrees(a_valor),
+                        color='red', linestyle='--', label='Ángulo actual')
+            plt.title('Torque vs Ángulo')
+            plt.xlabel('Ángulo (°)')
+            plt.ylabel('Torque (N·m)')
+            plt.grid(True)
+            plt.legend()
+            plt.show()
+
+        except Exception as e:
+            print("Error en los datos:", e)
+
+def descargar_resultado(b):
+    if resultado_guardado:
+        df = pd.DataFrame([resultado_guardado])
+        buffer = io.StringIO()
+        df.to_csv(buffer, index=False)
+        buffer.seek(0)
+        with open("resultado_torque.csv", "w") as f:
+            f.write(buffer.getvalue())
+        files.download("resultado_torque.csv")
+    else:
+        with salida:
+            clear_output()
+            print("No hay resultado para descargar. Primero calcule el torque.")
+
+boton.on_click(calcular_torque)
+boton_descarga.on_click(descargar_resultado)
+
+display(fuerza, unidad_fuerza,
+        distancia, unidad_distancia,
+        angulo, unidad_angulo,
+        boton, boton_descarga, salida)
